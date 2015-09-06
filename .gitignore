@@ -1,3 +1,4 @@
-config.php.example
-
 config.php
+
+.vagrant
+whmcs_install/
