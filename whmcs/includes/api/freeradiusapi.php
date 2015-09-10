@@ -70,11 +70,12 @@ $result = select_query(
 );
 
 #Billing period dates for usage check
-$nextduedate = $tblhosting["nextduedate"];
+$nextduedate  = $tblhosting["nextduedate"];
 $billingcycle = $tblhosting["billingcycle"];
-$year = substr($nextduedate,0,4);
+
+$year  = substr($nextduedate,0,4);
 $month = substr($nextduedate,5,2);
-$day = substr($nextduedate,8,2);
+$day   = substr($nextduedate,8,2);
 
 if ($billingcycle=="Monthly") {
     $new_time=mktime(0,0,0,$month-1,$day,$year);
@@ -87,9 +88,9 @@ if ($billingcycle=="Monthly") {
 } elseif ($billingcycle=="Biennially") {
     $new_time=mktime(0,0,0,$month,$day,$year-2);
 }
-$startdate = date("Y-m-d",$new_time);
 
-$enddate = "";
+$startdate = date("Y-m-d",$new_time);
+$enddate   = "";
 
 if (date("Ymd",$new_time)>=date("Ymd")) {
   if ($billingcycle=="Monthly") {
@@ -115,11 +116,12 @@ if (date("Ymd",$new_time)>=date("Ymd")) {
   } elseif ($billingcycle=="Biennially") {
       $new_time=mktime(0,0,0,$month,$day,$year-2);
   }
+
   $enddate = date("Y-m-d",$new_time);
 }
 
 $return["startdate"] = $startdate;
-$return["enddate"] = $enddate;
+$return["enddate"]   = $enddate;
 
 if( !$tblproducts["configoption2"] ){
   $usage_limit =0;
@@ -146,9 +148,10 @@ while ($data = mysql_fetch_array($result)) {
   }
 }
 
-$return["usagelimit"] = $usage_limit;
+$return["usagelimit"]     = $usage_limit;
+$return["suspendedgroup"] = $tblproducts["configoption5"];
 
-$return["result"] = "success";
+$return["result"]  = "success";
 $return["message"] = "Success";
 echo json_encode( $return );
 return;

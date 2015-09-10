@@ -30,7 +30,7 @@
   }
 //end
 
-//Get a list of users in the radcheck table 
+//Get a list of users in the radcheck table
   $radcheck_q = mysql_query("SELECT DISTINCT username FROM radcheck");
   while($radcheck = mysql_fetch_array($radcheck_q)) {
     array_push($radius_users,$radcheck['username']);
