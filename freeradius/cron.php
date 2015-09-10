@@ -1,19 +1,5 @@
 <?php
 
-//Check if script is already running
-  $tmpfilename = "/tmp/freeradius_cron.pid";
-  if (!($tmpfile = @fopen($tmpfilename,"w")))
-  {
-    return 0;
-  }
-
-  if (!@flock( $tmpfile, LOCK_EX | LOCK_NB, &$wouldblock) || $wouldblock)
-  {
-    @fclose($tmpfile);
-    return 0;
-  }
-//end
-
 //Include some files
   require(dirname(__FILE__).'/config.php');
 //end
