@@ -529,7 +529,7 @@ function collect_usage($params){
 //			return $query->where('AcctStartTime', '<=', $enddate);
 //		       })
 //		->orderBy('AcctStartTime', 'desc')
-//		->selectRaw('
+//		->selectRaw('COUNT(*) as logins,
 //			  SUM(`AcctSessionTime`) AS logintime,
 //			  SUM(`AcctInputOctets`) AS uploads,
 //			  SUM(`AcctOutputOctets`) AS downloads,
