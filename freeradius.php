@@ -510,81 +510,38 @@ function collect_usage($params){
 	$startdate = $date_range["startdate"];
 	$enddate = $date_range["enddate"];
 
-# $query = "SELECT COUNT(*) AS logins,SUM(radacct.AcctSessionTime) AS logintime,SUM(radacct.AcctInputOctets) AS uploads,SUM(radacct.AcctOutputOctets) AS downloads,SUM(radacct.AcctOutputOctets) + SUM(radacct.AcctInputOctets) AS total FROM radacct WHERE radacct.Username='$username' AND radacct.AcctStartTime>='".$startdate."'";
-#  if ($enddate) $query .= " AND radacct.AcctStartTime<='".$startdate."'";
-#  $query .= " ORDER BY AcctStartTime DESC";
-#  $result = mysqli_query($query,$freeradiussql);
-#  $data = mysqli_fetch_array($result);
-#  $logins = $data[0];
-#  $logintime = $data[1];
-#  $uploads = $data[2];
-#  $downloads = $data[3];
-#  $total = $data[4];
-#
-//	$data = $freeradiussql
-//		->from('radacct')
-//		->where('Username', $username)
-//		->where('AcctStartTime', '>=', $startdate)
-//		->when($enddate, function($query) use ($enddate){
-//			return $query->where('AcctStartTime', '<=', $enddate);
-//		       })
-//		->orderBy('AcctStartTime', 'desc')
-//		->selectRaw('COUNT(*) as logins,
-//			  SUM(`AcctSessionTime`) AS logintime,
-//			  SUM(`AcctInputOctets`) AS uploads,
-//			  SUM(`AcctOutputOctets`) AS downloads,
-//			  SUM(`AcctOutputOctets`) + SUM(`AcctInputOctets`) AS total');
-//
-//	logActivity(gettype($data), $params['userid']);
+	$data = $freeradiussql
+		->from('radacct')
+		->where('Username', $username)
+		->where('AcctStartTime', '>=', $startdate)
+		->when($enddate, function($query) use ($enddate){
+			return $query->where('AcctStartTime', '<=', $enddate);
+		       })
+		->selectRaw('COUNT(*) as logins,
+			  SUM(`AcctSessionTime`) AS logintime,
+			  SUM(`AcctInputOctets`) AS uploads,
+			  SUM(`AcctOutputOctets`) AS downloads,
+			  SUM(`AcctOutputOctets`) + SUM(`AcctInputOctets`) AS total')
+		->first();
+
+//	logActivity('Type: ' . gettype($data), $params['userid']);
 //	logActivity($data->toSql(), $params['userid']);
+//	logActivity('Content: ' . $t, $params['userid']);
+//	foreach ($data as $d) {
+//		logActivity('Each: ' . $d, $params['userid']);
+//	}
 //	logActivity(count($data->columns), $params['userid']);
-	
 //	logActivity(gettype($test), $params['userid']);
 //	logActivity($test, $params['userid']);
 
-	$logins = $freeradiussql
-		->from('radacct')
-		->where('Username', $username)
-		->where('AcctStartTime', '>=', $startdate)
-		->when($enddate, function($query) use ($enddate){
-			return $query->where('AcctStartTime', '<=', $enddate);
-		       })
-		->orderBy('AcctStartTime', 'desc')
-		->count();
-
-	$logintime = $freeradiussql
-		->from('radacct')
-		->where('Username', $username)
-		->where('AcctStartTime', '>=', $startdate)
-		->when($enddate, function($query) use ($enddate){
-			return $query->where('AcctStartTime', '<=', $enddate);
-		       })
-		->orderBy('AcctStartTime', 'desc')
-		->sum('AcctSessionTime');
+	$logins = $data->logins;
+	$logintime = $data->logintime;
 
 	logActivity('logins:' . $logins . ' logintime:' . $logintime , $params['userid']);
 
-	$uploads = $freeradiussql
-		->from('radacct')
-		->where('Username', $username)
-		->where('AcctStartTime', '>=', $startdate)
-		->when($enddate, function($query) use ($enddate){
-			return $query->where('AcctStartTime', '<=', $enddate);
-		       })
-		->orderBy('AcctStartTime')
-		->sum('AcctInputOctets');
-
-	$downloads = $freeradiussql
-		->from('radacct')
-		->where('Username', $username)
-		->where('AcctStartTime', '>=', $startdate)
-		->when($enddate, function($query) use ($enddate){
-			return $query->where('AcctStartTime', '<=', $enddate);
-		       })
-		->orderBy('AcctStartTime')
-		->sum('AcctOutputOctets');
-
-	$total = $uploads + $downloads;
+	$uploads = $data->uploads;
+	$downloads = $data->downloads;
+	$total = $data->total;
 
 	$data = $freeradiussql
 			->from('radacct')
@@ -593,11 +550,10 @@ function collect_usage($params){
 			->orderBy('AcctStartTime', 'desc')
 			->limit(1);
 
-	//logActivity($data->toSql(), $params['userid']);
 	$sessions = $data->count();
 	$start = $data->value('start');
 	$end = $data->value('stop');
-#
+
 	logActivity("Count:" . $sessions . " Start:" . $start . " Stop:" . $end, $params['userid']);
 
 	$status = "Offline";
