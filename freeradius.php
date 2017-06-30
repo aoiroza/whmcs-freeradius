@@ -33,6 +33,12 @@ function freeradius_ConfigOptions(){
       "Type" => "text",
       "Size" => "10",
       "Description" => "Prefix"
+    ),
+    "realm" => array (
+      "FriendlyName" => "Realm",
+      "Type" => "text",
+      "Size" => "25",
+      "Description" => "Realm"
     )
   );
   return $configarray;
@@ -112,25 +118,16 @@ function freeradius_CreateAccount($params){
   $rate_limit = $params["configoption3"];
   $session_limit = $params["configoption4"];
   $account_prefix = $params["configoption5"];
+  $realm = $params["configoption6"];
 
-  if( !$username ){
-    $username = freeradius_username( $account_prefix, $groupname );
+  if( !$username || strpos($username, $realm) !== true){
+    $username = freeradius_username( $account_prefix, $realm);
 
     Capsule::table('tblhosting')
            ->where('id', '=', $params["serviceid"])
            ->update(array(
                "username" => $username,
            ));
-  }
-  else {
-    // If username is supplied ensure it follows convention of prefix & group
-     if (strpos($username, $groupname) !== true) {
-             $username = freeradius_username( $account_prefix, $groupname );
-             Capsule::table('tblhosting')
-                    ->where('id', '=', $params["serviceid"])
-                    ->update(array("username" => $username,
-                    ));
-     } 
   }
 
   $freeradiussql = freeradius_DatabaseConnect($params);
@@ -434,9 +431,40 @@ function freeradius_update_ip_address($params){
   return "success";
 }
 
+function freeradius_send_packet_of_disconnect($params){
+
+  $username = $params["username"];
+
+  $freeradiussql = freeradius_databaseConnect($params);
+  try {
+	  $data = $freeradiussql
+			->from('radacct')
+			->where('username', $username)
+			->latest('acctstarttime')
+			->first();
+
+	$RadiusIP = '';
+	$RadiusPassword = '';
+
+	$Command = 'echo "User-Name=\"'.$username.'\", Framed-IP-Address=\"'.$data->framedipaddress.'\", NAS-IP-Address=\"'.$data->nasipaddress.'\"" | radclient -r3 -x '.$RadiusIP.' disconnect '.$RadiusPassword.' 2>&1';
+	
+	  logActivity("Disconnect: " . $Command , $params['userid']);
+
+	 $output = shell_exec($Command);
+
+	logActivity("Output: " . $output); 
+	#logActivity("Result: " . $result); 
+
+  } catch (\Exception $e) {
+      return "FreeRadius Database Query Error: " . $e->getMessage();
+  }
+  return "success";
+}
+
 function freeradius_AdminCustomButtonArray(){
     $buttonarray = array(
-   "Update IP Address" => "update_ip_address"
+   "Update IP Address" => "update_ip_address",
+   "Disconnect" => "send_packet_of_disconnect"
   );
   return $buttonarray;
 }
@@ -524,21 +552,8 @@ function collect_usage($params){
 			  SUM(`AcctOutputOctets`) + SUM(`AcctInputOctets`) AS total')
 		->first();
 
-//	logActivity('Type: ' . gettype($data), $params['userid']);
-//	logActivity($data->toSql(), $params['userid']);
-//	logActivity('Content: ' . $t, $params['userid']);
-//	foreach ($data as $d) {
-//		logActivity('Each: ' . $d, $params['userid']);
-//	}
-//	logActivity(count($data->columns), $params['userid']);
-//	logActivity(gettype($test), $params['userid']);
-//	logActivity($test, $params['userid']);
-
 	$logins = $data->logins;
 	$logintime = $data->logintime;
-
-	logActivity('logins:' . $logins . ' logintime:' . $logintime , $params['userid']);
-
 	$uploads = $data->uploads;
 	$downloads = $data->downloads;
 	$total = $data->total;
@@ -553,8 +568,6 @@ function collect_usage($params){
 	$sessions = $data->count();
 	$start = $data->value('start');
 	$end = $data->value('stop');
-
-	logActivity("Count:" . $sessions . " Start:" . $start . " Stop:" . $end, $params['userid']);
 
 	$status = "Offline";
 	if( $end ) {
