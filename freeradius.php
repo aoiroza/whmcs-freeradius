@@ -446,9 +446,9 @@ function freeradius_send_packet_of_disconnect($params){
 	$RadiusIP = '';
 	$RadiusPassword = '';
 
-	$Command = 'echo "User-Name=\"'.$username.'\", Framed-IP-Address=\"'.$data->framedipaddress.'\", NAS-IP-Address=\"'.$data->nasipaddress.'\"" | radclient -r3 -x '.$RadiusIP.' disconnect '.$RadiusPassword.' 2>&1';
+	$Command = 'echo "NAS-IP-Address=\"'.$data->nasipaddress.'\", User-Name=\"'.$username.'\", Acct-Session-Id=\"'.$data->acctsessionid.'\", Framed-IP-Address=\"'.$data->framedipaddress.'\"" | radclient -r1 -x '.$data->nasipaddress.' disconnect '.$RadiusPassword.' 2>&1';
 	
-	  logActivity("Disconnect: " . $Command , $params['userid']);
+	  logActivity("Disconnect: " . $Command, $params['userid']);
 
 	 $output = shell_exec($Command);
 
@@ -633,6 +633,8 @@ function secs_to_h($secs){
 
 function byte_size($bytes){
   $size = $bytes / 1024;
+
+  #logActivity("Bytes passed: " . $size, $params['userid']);
   if( $size < 1024 ) {
     $size = number_format( $size, 2 );
     $size .= ' KB';
@@ -642,10 +644,16 @@ function byte_size($bytes){
       $size = number_format($size / 1024, 2);
       $size .= ' MB';
     } 
-    else if ( $size / 1024 / 1024 < 1024 ) {
-      $size = number_format($size / 1024 / 1024, 2);
-      $size .= ' GB';
-    }
+    else 
+      if ( $size / 1024 / 1024 < 1024 ) {
+        $size = number_format($size / 1024 / 1024, 2);
+        $size .= ' GB';
+      }
+      else 
+        if ( $size / 1024 / 1024 /1024 < 1024 ) {
+          $size = number_format($size / 1024 / 1024 / 1024, 2);
+          $size .= ' TB';
+        }
   }
   return $size;
 }
